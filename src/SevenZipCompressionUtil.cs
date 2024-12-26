@@ -34,12 +34,11 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
         string tempDir = _directoryUtil.CreateTempDirectory();
         _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", fileNamePath, tempDir);
 
-        var createdDirectories = new HashSet<string>(); // To avoid redundant directory creation
-
         await using (Stream stream = File.OpenRead(fileNamePath))
         {
             using (SevenZipArchive archive = SevenZipArchive.Open(stream))
             {
+                // Filter entries
                 List<SevenZipArchiveEntry> entries = archive.Entries
                     .Where(entry =>
                         entry.Key != null &&
@@ -53,15 +52,27 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
                     return tempDir; // Return the temp directory even if nothing was extracted
                 }
 
+                // Pre-create directories
+                List<string> directoriesToCreate = entries
+                    .Select(entry => Path.Combine(tempDir, Path.GetDirectoryName(entry.Key!)!))
+                    .Distinct()
+                    .ToList();
+
+                foreach (string directory in directoriesToCreate)
+                {
+                    _directoryUtil.CreateIfDoesNotExist(directory);
+                }
+
+                // Extract entries
                 if (isParallel)
                 {
-                    await Task.WhenAll(entries.Select(entry => ProcessEntryAsync(entry, tempDir, createdDirectories, cancellation))).NoSync();
+                    await Task.WhenAll(entries.Select(entry => ProcessEntryAsync(entry, tempDir, cancellation))).NoSync();
                 }
                 else
                 {
                     foreach (SevenZipArchiveEntry entry in entries)
                     {
-                        await ProcessEntryAsync(entry, tempDir, createdDirectories, cancellation).NoSync();
+                        await ProcessEntryAsync(entry, tempDir, cancellation).NoSync();
                     }
                 }
             }
@@ -76,7 +87,6 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
     private Task ProcessEntryAsync(
         SevenZipArchiveEntry entry,
         string tempDir,
-        HashSet<string> createdDirectories,
         CancellationToken cancellation)
     {
         try
@@ -85,17 +95,9 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
             string entryPath = Path.Combine(tempDir, entry.Key!);
 
-            if (entry.IsDirectory)
-            {
-                // Ensure directory is created only once
-                if (createdDirectories.Add(entryPath))
-                    _directoryUtil.CreateIfDoesNotExist(entryPath);
-            }
-            else
-            {
-                _logger.LogInformation("Extracting {message} ({size})...", entry.Key, entry.Size);
-                return Task.Run(() => entry.WriteToFile(entryPath), cancellation);
-            }
+            // Extract file
+            _logger.LogInformation("Extracting {message} ({size})...", entry.Key, entry.Size);
+            return Task.Run(() => entry.WriteToFile(entryPath), cancellation);
         }
         catch (Exception ex)
         {
@@ -104,6 +106,7 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
         return Task.CompletedTask;
     }
+
 
     private static string GetLastPart(string path)
     {
