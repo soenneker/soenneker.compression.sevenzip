@@ -39,7 +39,9 @@ public class SevenZipCompressionUtil: ISevenZipCompressionUtil
             using (SevenZipArchive archive = SevenZipArchive.Open(stream))
             {
                 List<SevenZipArchiveEntry> entries = archive.Entries
-                    .Where(entry => entry.Key != null && (!entry.IsDirectory || specificFileFilter == null || entry.Key.Contains(specificFileFilter)))
+                    .Where(entry =>
+                        entry.Key != null &&
+                        (!entry.IsDirectory || specificFileFilter == null || entry.Key.EndsWith(specificFileFilter, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
 
                 await Task.WhenAll(entries.Select(async entry =>
@@ -78,6 +80,7 @@ public class SevenZipCompressionUtil: ISevenZipCompressionUtil
         string path = Path.Combine(tempDir, GetFirstDirectory(tempDir));
         return path;
     }
+
 
     private static string GetLastPart(string path)
     {
