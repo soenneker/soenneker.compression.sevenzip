@@ -11,5 +11,6 @@ public interface ISevenZipCompressionUtil
     ValueTask<string> Extract(
         string fileNamePath,
         string? specificFileFilter = null,
+        bool isParallel = true,
         CancellationToken cancellation = default);
 }
