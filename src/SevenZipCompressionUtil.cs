@@ -41,7 +41,7 @@ public class SevenZipCompressionUtil: ISevenZipCompressionUtil
                 List<SevenZipArchiveEntry> entries = archive.Entries
                     .Where(entry =>
                         entry.Key != null &&
-                        (!entry.IsDirectory || specificFileFilter == null || entry.Key.EndsWith(specificFileFilter, StringComparison.OrdinalIgnoreCase)))
+                        !entry.IsDirectory && (specificFileFilter == null || entry.Key.EndsWith(specificFileFilter, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
 
                 await Task.WhenAll(entries.Select(async entry =>
