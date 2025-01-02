@@ -14,7 +14,7 @@
         <AssemblyName>Soenneker.Compression.SevenZip</AssemblyName>
         <PackageId>Soenneker.Compression.SevenZip</PackageId>
         <PackageTags>compression sevenzip extraction archive archiving 7zip 7z sevenzipcompressionutil util csharp dotnet c# .net</PackageTags>
-        <Copyright>Copyright © 2024 Jake Soenneker</Copyright>
+        <Copyright>Copyright © 2024-2025 Jake Soenneker</Copyright>
         <Authors>Jake Soenneker</Authors>
         <Company>https://soenneker.com</Company>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
