@@ -1,4 +1,4 @@
-# Contributing to Soenneker.Compression.SevenZip
+﻿# Contributing to Soenneker.Compression.SevenZip
 
 We're excited that you're interested in contributing!
 
