@@ -44,6 +44,7 @@
     <ItemGroup>
         <PackageReference Include="SharpCompress" Version="0.40.0" />
         <PackageReference Include="Soenneker.Extensions.Task" Version="3.0.102" />
-        <PackageReference Include="Soenneker.Utils.Directory" Version="3.0.702" />
+        <PackageReference Include="Soenneker.Extensions.ValueTask" Version="3.0.92" />
+        <PackageReference Include="Soenneker.Utils.Directory" Version="3.0.704" />
     </ItemGroup>
 </Project>

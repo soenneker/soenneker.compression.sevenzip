@@ -10,11 +10,12 @@ using Soenneker.Utils.Directory.Abstract;
 using System.Threading;
 using System.Collections.Generic;
 using Soenneker.Extensions.Task;
+using Soenneker.Extensions.ValueTask;
 
 namespace Soenneker.Compression.SevenZip;
 
 /// <inheritdoc cref="ISevenZipCompressionUtil"/>
-public class SevenZipCompressionUtil : ISevenZipCompressionUtil
+public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 {
     private readonly ILogger<SevenZipCompressionUtil> _logger;
     private readonly IDirectoryUtil _directoryUtil;
@@ -25,13 +26,10 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
         _directoryUtil = directoryUtil;
     }
 
-    public async ValueTask<string> Extract(
-        string fileNamePath,
-        string? specificFileFilter = null,
-        bool isParallel = true,
+    public async ValueTask<string> Extract(string fileNamePath, string? specificFileFilter = null, bool isParallel = true,
         CancellationToken cancellation = default)
     {
-        string tempDir = _directoryUtil.CreateTempDirectory();
+        string tempDir = await _directoryUtil.CreateTempDirectory(cancellation).NoSync();
         _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", fileNamePath, tempDir);
 
         await using (Stream stream = File.OpenRead(fileNamePath))
@@ -39,12 +37,11 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
             using (SevenZipArchive archive = SevenZipArchive.Open(stream))
             {
                 // Filter entries
-                List<SevenZipArchiveEntry> entries = archive.Entries
-                    .Where(entry =>
-                        entry.Key != null &&
-                        !entry.IsDirectory &&
-                        (specificFileFilter == null || entry.Key.EndsWith(specificFileFilter, StringComparison.OrdinalIgnoreCase)))
-                    .ToList();
+                List<SevenZipArchiveEntry> entries = archive.Entries.Where(entry =>
+                                                                entry.Key != null && !entry.IsDirectory &&
+                                                                (specificFileFilter == null || entry.Key.EndsWith(specificFileFilter,
+                                                                    StringComparison.OrdinalIgnoreCase)))
+                                                            .ToList();
 
                 if (entries.Count == 0)
                 {
@@ -53,10 +50,7 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
                 }
 
                 // Pre-create directories
-                List<string> directoriesToCreate = entries
-                    .Select(entry => Path.Combine(tempDir, Path.GetDirectoryName(entry.Key!)!))
-                    .Distinct()
-                    .ToList();
+                List<string> directoriesToCreate = entries.Select(entry => Path.Combine(tempDir, Path.GetDirectoryName(entry.Key!)!)).Distinct().ToList();
 
                 foreach (string directory in directoriesToCreate)
                 {
@@ -84,10 +78,7 @@ public class SevenZipCompressionUtil : ISevenZipCompressionUtil
         return path;
     }
 
-    private Task ProcessEntryAsync(
-        SevenZipArchiveEntry entry,
-        string tempDir,
-        CancellationToken cancellation)
+    private Task ProcessEntryAsync(SevenZipArchiveEntry entry, string tempDir, CancellationToken cancellation)
     {
         try
         {
