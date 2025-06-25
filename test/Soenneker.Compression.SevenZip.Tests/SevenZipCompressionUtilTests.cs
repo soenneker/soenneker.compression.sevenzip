@@ -1,5 +1,7 @@
 using Soenneker.Compression.SevenZip.Abstract;
+using Soenneker.Facts.Local;
 using Soenneker.Tests.FixturedUnit;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Soenneker.Compression.SevenZip.Tests;
@@ -17,6 +19,13 @@ public class SevenZipCompressionUtilTests : FixturedUnitTest
     [Fact]
     public void Default()
     {
+
+    }
+
+    [LocalFact]
+    public async ValueTask Extract()
+    {
+        var result = await _util.Extract(@"C:\7zip\test.7z.exe", CancellationToken);
 
     }
 }

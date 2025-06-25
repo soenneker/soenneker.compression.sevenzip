@@ -45,6 +45,10 @@
         <PackageReference Include="SharpCompress" Version="0.40.0" />
         <PackageReference Include="Soenneker.Extensions.Task" Version="3.0.102" />
         <PackageReference Include="Soenneker.Extensions.ValueTask" Version="3.0.92" />
+        <PackageReference Include="Soenneker.Libraries.SevenZip" Version="3.0.3" />
+        <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="3.0.6" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="3.0.704" />
+        <PackageReference Include="Soenneker.Utils.Process" Version="3.0.1314" />
+        <PackageReference Include="Soenneker.Utils.Runtime" Version="3.0.846" />
     </ItemGroup>
 </Project>

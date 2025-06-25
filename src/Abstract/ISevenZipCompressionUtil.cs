@@ -8,9 +8,7 @@ namespace Soenneker.Compression.SevenZip.Abstract;
 /// </summary>
 public interface ISevenZipCompressionUtil
 {
-    ValueTask<string> Extract(
-        string fileNamePath,
-        string? specificFileFilter = null,
-        bool isParallel = true,
-        CancellationToken cancellation = default);
+    ValueTask<string> ExtractAdvanced(string fileNamePath, string? specificFileFilter = null, bool isParallel = true, CancellationToken cancellationToken = default);
+
+    ValueTask<string> Extract(string archivePath, CancellationToken cancellationToken = default);
 }

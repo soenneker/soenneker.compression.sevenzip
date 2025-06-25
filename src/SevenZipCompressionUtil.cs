@@ -1,16 +1,18 @@
-using Soenneker.Compression.SevenZip.Abstract;
-using System.IO;
-using System.Threading.Tasks;
-using System;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using SharpCompress.Archives;
 using SharpCompress.Archives.SevenZip;
-using Soenneker.Utils.Directory.Abstract;
-using System.Threading;
-using System.Collections.Generic;
+using Soenneker.Compression.SevenZip.Abstract;
 using Soenneker.Extensions.Task;
 using Soenneker.Extensions.ValueTask;
+using Soenneker.Utils.Directory.Abstract;
+using Soenneker.Utils.Process.Abstract;
+using Soenneker.Utils.Runtime;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Soenneker.Compression.SevenZip;
 
@@ -19,17 +21,19 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 {
     private readonly ILogger<SevenZipCompressionUtil> _logger;
     private readonly IDirectoryUtil _directoryUtil;
+    private readonly IProcessUtil _processUtil;
 
-    public SevenZipCompressionUtil(ILogger<SevenZipCompressionUtil> logger, IDirectoryUtil directoryUtil)
+    public SevenZipCompressionUtil(ILogger<SevenZipCompressionUtil> logger, IDirectoryUtil directoryUtil, IProcessUtil processUtil)
     {
         _logger = logger;
         _directoryUtil = directoryUtil;
+        _processUtil = processUtil;
     }
 
-    public async ValueTask<string> Extract(string fileNamePath, string? specificFileFilter = null, bool isParallel = true,
-        CancellationToken cancellation = default)
+    public async ValueTask<string> ExtractAdvanced(string fileNamePath, string? specificFileFilter = null, bool isParallel = true,
+        CancellationToken cancellationToken = default)
     {
-        string tempDir = await _directoryUtil.CreateTempDirectory(cancellation).NoSync();
+        string tempDir = await _directoryUtil.CreateTempDirectory(cancellationToken).NoSync();
         _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", fileNamePath, tempDir);
 
         await using (Stream stream = File.OpenRead(fileNamePath))
@@ -60,13 +64,13 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
                 // Extract entries
                 if (isParallel)
                 {
-                    await Task.WhenAll(entries.Select(entry => ProcessEntryAsync(entry, tempDir, cancellation))).NoSync();
+                    await Task.WhenAll(entries.Select(entry => ProcessEntryAsync(entry, tempDir, cancellationToken))).NoSync();
                 }
                 else
                 {
                     foreach (SevenZipArchiveEntry entry in entries)
                     {
-                        await ProcessEntryAsync(entry, tempDir, cancellation).NoSync();
+                        await ProcessEntryAsync(entry, tempDir, cancellationToken).NoSync();
                     }
                 }
             }
@@ -76,6 +80,38 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
         string path = Path.Combine(tempDir, GetFirstDirectory(tempDir));
         return path;
+    }
+
+    private static string GetSevenZipExecutable()
+    {
+        if (RuntimeUtil.IsWindows())
+            return "7za.exe";
+
+        if (RuntimeUtil.IsLinux())
+            return "7zz";
+
+        throw new PlatformNotSupportedException("7-Zip not supported on this OS.");
+    }
+
+    public async ValueTask<string> Extract(string archivePath, CancellationToken cancellationToken = default)
+    {
+        string executable = GetSevenZipExecutable();
+
+        string tempDir = await _directoryUtil.CreateTempDirectory(cancellationToken).NoSync();
+        _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", archivePath, tempDir);
+
+        var args = $"x \"{archivePath}\" -o\"{tempDir}\" -y";
+
+        _logger.LogInformation("Running 7-Zip extraction: {exe} {args}", executable, args);
+
+        string executablePath = Path.Combine(AppContext.BaseDirectory, "Resources", executable);
+
+        List<string> result = await _processUtil.Start(executablePath, null, args, false, true, null, 
+            true, cancellationToken).NoSync();
+
+        _logger.LogInformation("7-Zip extraction complete");
+
+        return tempDir;
     }
 
     private Task ProcessEntryAsync(SevenZipArchiveEntry entry, string tempDir, CancellationToken cancellation)
@@ -107,7 +143,6 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
     private static string GetFirstDirectory(string path)
     {
         string directory = Directory.GetDirectories(path).First();
-        directory = GetLastPart(directory);
-        return directory;
+        return GetLastPart(directory);
     }
 }
