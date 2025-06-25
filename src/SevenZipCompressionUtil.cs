@@ -64,13 +64,13 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
                 // Extract entries
                 if (isParallel)
                 {
-                    await Task.WhenAll(entries.Select(entry => ProcessEntryAsync(entry, tempDir, cancellationToken))).NoSync();
+                    await Task.WhenAll(entries.Select(entry => ProcessEntry(entry, tempDir, cancellationToken))).NoSync();
                 }
                 else
                 {
                     foreach (SevenZipArchiveEntry entry in entries)
                     {
-                        await ProcessEntryAsync(entry, tempDir, cancellationToken).NoSync();
+                        await ProcessEntry(entry, tempDir, cancellationToken).NoSync();
                     }
                 }
             }
@@ -106,15 +106,14 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
         string executablePath = Path.Combine(AppContext.BaseDirectory, "Resources", executable);
 
-        List<string> result = await _processUtil.Start(executablePath, null, args, false, true, null, 
-            true, cancellationToken).NoSync();
+        List<string> result = await _processUtil.Start(executablePath, null, args, false, true, null, true, cancellationToken).NoSync();
 
         _logger.LogInformation("7-Zip extraction complete");
 
         return tempDir;
     }
 
-    private Task ProcessEntryAsync(SevenZipArchiveEntry entry, string tempDir, CancellationToken cancellation)
+    private Task ProcessEntry(SevenZipArchiveEntry entry, string tempDir, CancellationToken cancellation)
     {
         try
         {
