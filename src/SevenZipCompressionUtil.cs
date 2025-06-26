@@ -78,8 +78,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
         _logger.LogInformation("Finished extracting {fileName}", fileNamePath);
 
-        string path = Path.Combine(tempDir, GetFirstDirectory(tempDir));
-        return path;
+        return Path.Combine(tempDir, GetFirstDirectory(tempDir));
     }
 
     private static string GetSevenZipExecutable()
