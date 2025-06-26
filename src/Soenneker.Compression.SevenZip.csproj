@@ -53,10 +53,10 @@
         <PackageReference Include="Soenneker.Utils.Directory" Version="3.0.704" />
         <PackageReference Include="Soenneker.Utils.Process" Version="3.0.1314" />
         <PackageReference Include="Soenneker.Utils.Runtime" Version="3.0.846" />
-        <Content Include="$(NuGetPackageRoot)Soenneker.Libraries.SevenZip\**\7za.exe"
+        <Content Include="Resources\7za.exe"
                  Pack="true"
                  PackageCopyToOutput="true" />
-        <Content Include="$(NuGetPackageRoot)Soenneker.Libraries.SevenZip.Linux\**\7zz"
+        <Content Include="Resources\7zz"
                  Pack="true"
                  PackageCopyToOutput="true" />
     </ItemGroup>
