@@ -105,7 +105,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
         string executablePath = Path.Combine(AppContext.BaseDirectory, "Resources", executable);
 
-        List<string> result = await _processUtil.Start(executablePath, null, args, false, true, null, true, cancellationToken).NoSync();
+        List<string> result = await _processUtil.Start(executablePath, null, args, cancellationToken: cancellationToken).NoSync();
 
         _logger.LogInformation("7-Zip extraction complete");
 
