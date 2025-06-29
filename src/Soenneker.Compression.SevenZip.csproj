@@ -48,7 +48,7 @@
         <PackageReference Include="SharpCompress" Version="0.40.0" />
         <PackageReference Include="Soenneker.Extensions.Task" Version="3.0.103" />
         <PackageReference Include="Soenneker.Extensions.ValueTask" Version="3.0.93" />
-        <PackageReference Include="Soenneker.Libraries.SevenZip" Version="3.0.12" PrivateAssets="analyzers;build" />
+        <PackageReference Include="Soenneker.Libraries.SevenZip" Version="3.0.19" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="3.0.6" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="3.0.711" />
         <PackageReference Include="Soenneker.Utils.Process" Version="3.0.1322" />
