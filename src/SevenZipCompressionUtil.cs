@@ -83,11 +83,11 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
     private static string GetSevenZipExecutable()
     {
+        if (RuntimeUtil.IsLinux())
+            return "7zzs";
+
         if (RuntimeUtil.IsWindows())
             return "7za.exe";
-
-        if (RuntimeUtil.IsLinux())
-            return "7zz";
 
         throw new PlatformNotSupportedException("7-Zip not supported on this OS.");
     }
