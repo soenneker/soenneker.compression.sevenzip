@@ -50,6 +50,6 @@
         <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="3.0.79" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.740" />
         <PackageReference Include="Soenneker.Utils.Process" Version="4.0.1355" />
-        <PackageReference Include="Soenneker.Utils.Runtime" Version="4.0.878" />
+        <PackageReference Include="Soenneker.Utils.Runtime" Version="4.0.879" />
     </ItemGroup>
 </Project>
