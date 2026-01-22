@@ -21,7 +21,7 @@
         </Content>
     </ItemGroup>
 
-    <ItemGroup><PackageReference Include="Soenneker.Facts.Local" Version="4.0.554" />
+    <ItemGroup><PackageReference Include="Soenneker.Facts.Local" Version="4.0.555" />
         <PackageReference Include="Soenneker.Utils.Test" Version="4.0.302" />
         <PackageReference Include="Soenneker.Tests.FixturedUnit" Version="4.0.2169" />
         <PackageReference Include="xUnit.v3" Version="3.2.2" />
