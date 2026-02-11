@@ -25,7 +25,7 @@ public class SevenZipCompressionUtilTests : FixturedUnitTest
     [LocalFact]
     public async ValueTask Extract()
     {
-        var result = await _util.Extract(@"C:\7zip\test.7z.exe", CancellationToken);
+        string result = await _util.Extract(@"C:\7zip\test.7z.exe", CancellationToken);
 
     }
 }

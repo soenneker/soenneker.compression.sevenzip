@@ -13,6 +13,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Soenneker.Extensions.String;
 
 namespace Soenneker.Compression.SevenZip;
 
@@ -51,14 +52,15 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         };
 
         await using var stream = new FileStream(fileNamePath, fsOptions);
-        using var archive = SevenZipArchive.Open(stream);
+        IAsyncArchive archive = SevenZipArchive.OpenAsyncArchive(stream);
 
         // Materialize matching entries once; SevenZipArchiveEntry is a reference type
         // and we need a stable snapshot before extracting.
         List<SevenZipArchiveEntry> entries = new(capacity: 32);
 
-        foreach (SevenZipArchiveEntry entry in archive.Entries)
+        await foreach (IArchiveEntry archiveEntry in archive.EntriesAsync.WithCancellation(cancellationToken))
         {
+            var entry = (SevenZipArchiveEntry)archiveEntry;
             cancellationToken.ThrowIfCancellationRequested();
 
             // Fast rejects
@@ -66,7 +68,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
                 continue;
 
             string? key = entry.Key;
-            if (string.IsNullOrEmpty(key))
+            if (key.IsNullOrEmpty())
                 continue;
 
             if (specificFileFilter != null && !key.EndsWith(specificFileFilter, StringComparison.OrdinalIgnoreCase))
@@ -89,7 +91,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
             var tasks = new Task[entries.Count];
 
-            for (int i = 0; i < entries.Count; i++)
+            for (var i = 0; i < entries.Count; i++)
             {
                 SevenZipArchiveEntry entry = entries[i];
                 tasks[i] = ProcessEntryBounded(entry, rootFullPath, gate, cancellationToken);
@@ -99,7 +101,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         }
         else
         {
-            for (int i = 0; i < entries.Count; i++)
+            for (var i = 0; i < entries.Count; i++)
                 await ProcessEntryInline(entries[i], rootFullPath, cancellationToken).NoSync();
         }
 
@@ -153,7 +155,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
             // Sync write (SharpCompress). Overwrite semantics depend on SharpCompress version;
             // keep default behavior to avoid unexpected changes.
-            entry.WriteToFile(destinationPath);
+            await entry.WriteToFileAsync(destinationPath, cancellationToken).NoSync();
         }
         catch (OperationCanceledException)
         {
@@ -184,7 +186,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", archivePath, tempDir);
 
         // Only one string allocation here; fine.
-        string args = $"x \"{archivePath}\" -o\"{tempDir}\" -y";
+        var args = $"x \"{archivePath}\" -o\"{tempDir}\" -y";
 
         _logger.LogInformation("Running 7-Zip extraction: {exe} {args}", executable, args);
 
