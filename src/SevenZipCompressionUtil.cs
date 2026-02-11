@@ -56,25 +56,22 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
         // Materialize matching entries once; SevenZipArchiveEntry is a reference type
         // and we need a stable snapshot before extracting.
-        List<SevenZipArchiveEntry> entries = new(capacity: 32);
+        List<IArchiveEntry> entries = new(capacity: 32);
 
         await foreach (IArchiveEntry archiveEntry in archive.EntriesAsync.WithCancellation(cancellationToken))
         {
-            var entry = (SevenZipArchiveEntry)archiveEntry;
-            cancellationToken.ThrowIfCancellationRequested();
-
             // Fast rejects
-            if (entry.IsDirectory)
+            if (archiveEntry.IsDirectory)
                 continue;
 
-            string? key = entry.Key;
+            string? key = archiveEntry.Key;
             if (key.IsNullOrEmpty())
                 continue;
 
             if (specificFileFilter != null && !key.EndsWith(specificFileFilter, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            entries.Add(entry);
+            entries.Add(archiveEntry);
         }
 
         if (entries.Count == 0)
@@ -93,7 +90,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
             for (var i = 0; i < entries.Count; i++)
             {
-                SevenZipArchiveEntry entry = entries[i];
+                IArchiveEntry entry = entries[i];
                 tasks[i] = ProcessEntryBounded(entry, rootFullPath, gate, cancellationToken);
             }
 
@@ -110,7 +107,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
     }
 
     private Task ProcessEntryBounded(
-        SevenZipArchiveEntry entry,
+        IArchiveEntry entry,
         string rootFullPath,
         SemaphoreSlim gate,
         CancellationToken cancellationToken)
@@ -132,7 +129,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
     }
 
     private async ValueTask ProcessEntryInline(
-        SevenZipArchiveEntry entry,
+        IArchiveEntry entry,
         string rootFullPath,
         CancellationToken cancellationToken)
     {
