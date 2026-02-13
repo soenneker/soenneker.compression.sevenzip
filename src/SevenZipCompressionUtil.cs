@@ -52,7 +52,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         };
 
         await using var stream = new FileStream(fileNamePath, fsOptions);
-        IAsyncArchive archive = SevenZipArchive.OpenAsyncArchive(stream);
+        IAsyncArchive archive = await SevenZipArchive.OpenAsyncArchive(stream, cancellationToken: cancellationToken);
 
         // Materialize matching entries once; SevenZipArchiveEntry is a reference type
         // and we need a stable snapshot before extracting.
