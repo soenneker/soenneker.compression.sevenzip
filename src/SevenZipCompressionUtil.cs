@@ -31,13 +31,11 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         _processUtil = processUtil;
     }
 
-    public async ValueTask<string> ExtractAdvanced(
-        string fileNamePath,
-        string? specificFileFilter = null,
-        bool isConcurrent = true,
+    public async ValueTask<string> ExtractAdvanced(string fileNamePath, string? specificFileFilter = null, bool isConcurrent = true,
         CancellationToken cancellationToken = default)
     {
-        string tempDir = await _directoryUtil.CreateTempDirectory(cancellationToken).NoSync();
+        string tempDir = await _directoryUtil.CreateTempDirectory(cancellationToken)
+                                             .NoSync();
         _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", fileNamePath, tempDir);
 
         // Full, normalized root used for traversal protection
@@ -52,7 +50,8 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         };
 
         await using var stream = new FileStream(fileNamePath, fsOptions);
-        IAsyncArchive archive = await SevenZipArchive.OpenAsyncArchive(stream, cancellationToken: cancellationToken).NoSync();
+        IAsyncArchive archive = await SevenZipArchive.OpenAsyncArchive(stream, cancellationToken: cancellationToken)
+                                                     .NoSync();
 
         // Materialize matching entries once; SevenZipArchiveEntry is a reference type
         // and we need a stable snapshot before extracting.
@@ -94,32 +93,32 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
                 tasks[i] = ProcessEntryBounded(entry, rootFullPath, gate, cancellationToken);
             }
 
-            await Task.WhenAll(tasks).NoSync();
+            await Task.WhenAll(tasks)
+                      .NoSync();
         }
         else
         {
             for (var i = 0; i < entries.Count; i++)
-                await ProcessEntryInline(entries[i], rootFullPath, cancellationToken).NoSync();
+                await ProcessEntryInline(entries[i], rootFullPath, cancellationToken)
+                    .NoSync();
         }
 
         _logger.LogInformation("Finished extracting {fileName} to directory ({dir})", fileNamePath, tempDir);
         return tempDir;
     }
 
-    private Task ProcessEntryBounded(
-        IArchiveEntry entry,
-        string rootFullPath,
-        SemaphoreSlim gate,
-        CancellationToken cancellationToken)
+    private Task ProcessEntryBounded(IArchiveEntry entry, string rootFullPath, SemaphoreSlim gate, CancellationToken cancellationToken)
     {
         // Minimal async state: wait bounded, then run extraction on threadpool (SharpCompress is sync).
         return Task.Run(async () =>
         {
-            await gate.WaitAsync(cancellationToken).NoSync();
+            await gate.WaitAsync(cancellationToken)
+                      .NoSync();
 
             try
             {
-                await ProcessEntryInline(entry, rootFullPath, cancellationToken).NoSync();
+                await ProcessEntryInline(entry, rootFullPath, cancellationToken)
+                    .NoSync();
             }
             finally
             {
@@ -128,10 +127,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         }, cancellationToken);
     }
 
-    private async ValueTask ProcessEntryInline(
-        IArchiveEntry entry,
-        string rootFullPath,
-        CancellationToken cancellationToken)
+    private async ValueTask ProcessEntryInline(IArchiveEntry entry, string rootFullPath, CancellationToken cancellationToken)
     {
         try
         {
@@ -145,14 +141,16 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
             // Ensure containing directory exists (cheap if already exists)
             string? dir = Path.GetDirectoryName(destinationPath);
 
-            await _directoryUtil.CreateIfDoesNotExist(dir, true, cancellationToken).NoSync();
+            await _directoryUtil.Create(dir, true, cancellationToken)
+                                .NoSync();
 
             // Per-entry info logs can be *very* noisy/slow on big archives.
             _logger.LogDebug("Extracting {entry} ({size})...", key, entry.Size);
 
             // Sync write (SharpCompress). Overwrite semantics depend on SharpCompress version;
             // keep default behavior to avoid unexpected changes.
-            await entry.WriteToFileAsync(destinationPath, cancellationToken).NoSync();
+            await entry.WriteToFileAsync(destinationPath, cancellationToken)
+                       .NoSync();
         }
         catch (OperationCanceledException)
         {
@@ -179,7 +177,8 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
     {
         string executable = GetSevenZipExecutable();
 
-        string tempDir = await _directoryUtil.CreateTempDirectory(cancellationToken).NoSync();
+        string tempDir = await _directoryUtil.CreateTempDirectory(cancellationToken)
+                                             .NoSync();
         _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", archivePath, tempDir);
 
         // Only one string allocation here; fine.
@@ -189,7 +188,8 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
         string executablePath = Path.Combine(AppContext.BaseDirectory, "Resources", executable);
 
-        _ = await _processUtil.Start(executablePath, null, args, cancellationToken: cancellationToken).NoSync();
+        _ = await _processUtil.Start(executablePath, null, args, cancellationToken: cancellationToken)
+                              .NoSync();
 
         _logger.LogInformation("7-Zip extraction complete");
         return tempDir;
