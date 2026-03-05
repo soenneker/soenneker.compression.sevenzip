@@ -149,7 +149,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
             // Sync write (SharpCompress). Overwrite semantics depend on SharpCompress version;
             // keep default behavior to avoid unexpected changes.
-            await entry.WriteToFileAsync(destinationPath, cancellationToken)
+            await entry.WriteToFileAsync(destinationPath, null, cancellationToken)
                        .NoSync();
         }
         catch (OperationCanceledException)
