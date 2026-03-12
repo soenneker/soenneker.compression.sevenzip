@@ -28,7 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Soenneker.Compression.SevenZip.csproj" />
+        <ProjectReference Include="..\..\src\Soenneker.Compression.SevenZip\Soenneker.Compression.SevenZip.csproj" />
     </ItemGroup>
 
     <ItemGroup>
