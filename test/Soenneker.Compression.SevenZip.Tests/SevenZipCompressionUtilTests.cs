@@ -1,28 +1,27 @@
 using Soenneker.Compression.SevenZip.Abstract;
-using Soenneker.Facts.Local;
-using Soenneker.Tests.FixturedUnit;
+using Soenneker.Tests.Attributes.Local;
+using Soenneker.Tests.HostedUnit;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace Soenneker.Compression.SevenZip.Tests;
 
-[Collection("Collection")]
-public class SevenZipCompressionUtilTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public class SevenZipCompressionUtilTests : HostedUnitTest
 {
     private readonly ISevenZipCompressionUtil _util;
 
-    public SevenZipCompressionUtilTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public SevenZipCompressionUtilTests(Host host) : base(host)
     {
         _util = Resolve<ISevenZipCompressionUtil>(true);
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
     }
 
-    [LocalFact]
+    [LocalOnly]
     public async ValueTask Extract()
     {
         string result = await _util.Extract(@"C:\7zip\test.7z.exe", CancellationToken);
