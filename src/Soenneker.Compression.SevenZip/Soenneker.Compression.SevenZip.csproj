@@ -44,7 +44,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="SharpCompress" Version="0.47.4" />
+        <PackageReference Include="SharpCompress" Version="0.48.0" />
         <PackageReference Include="Soenneker.Libraries.SevenZip" Version="4.0.374" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="4.0.364" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.852" />
