@@ -21,6 +21,7 @@ public class SevenZipCompressionUtilTests : HostedUnitTest
 
     }
 
+    [Test]
     [LocalOnly]
     public async ValueTask Extract()
     {
