@@ -14,6 +14,8 @@ public static class SevenZipCompressionUtilRegistrar
     /// <summary>
     /// Adds <see cref="ISevenZipCompressionUtil"/> as a singleton service. <para/>
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddSevenZipCompressionUtilAsSingleton(this IServiceCollection services)
     {
         services.AddDirectoryUtilAsSingleton().AddProcessUtilAsSingleton().TryAddSingleton<ISevenZipCompressionUtil, SevenZipCompressionUtil>();
@@ -24,6 +26,8 @@ public static class SevenZipCompressionUtilRegistrar
     /// <summary>
     /// Adds <see cref="ISevenZipCompressionUtil"/> as a scoped service. <para/>
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddSevenZipCompressionUtilAsScoped(this IServiceCollection services)
     {
         services.AddDirectoryUtilAsScoped().AddProcessUtilAsScoped().TryAddScoped<ISevenZipCompressionUtil, SevenZipCompressionUtil>();

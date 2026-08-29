@@ -9,20 +9,20 @@ namespace Soenneker.Compression.SevenZip.Abstract;
 public interface ISevenZipCompressionUtil
 {
     /// <summary>
-    /// Executes the extract advanced operation.
+    /// Extracts advanced.
     /// </summary>
-    /// <param name="fileNamePath">The file name path.</param>
-    /// <param name="specificFileFilter">The specific file filter.</param>
-    /// <param name="isParallel">The is parallel.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task containing the result of the operation.</returns>
+    /// <param name="fileNamePath">Path of the file name to use.</param>
+    /// <param name="specificFileFilter">Specific File Filter for the extract advanced operation.</param>
+    /// <param name="isParallel">Whether parallel.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>A task whose result is the text returned by extract Advanced.</returns>
     ValueTask<string> ExtractAdvanced(string fileNamePath, string? specificFileFilter = null, bool isParallel = true, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Executes the extract operation.
+    /// Extracts seven Zip Compression.
     /// </summary>
-    /// <param name="archivePath">The archive path.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task containing the result of the operation.</returns>
+    /// <param name="archivePath">Path of the archive to use.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>A task whose result is the text returned by extract.</returns>
     ValueTask<string> Extract(string archivePath, CancellationToken cancellationToken = default);
 }
