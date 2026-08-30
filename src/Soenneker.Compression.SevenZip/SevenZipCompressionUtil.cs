@@ -14,6 +14,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Soenneker.Extensions.String;
+using System.Text;
 
 namespace Soenneker.Compression.SevenZip;
 
@@ -31,12 +32,15 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         _processUtil = processUtil;
     }
 
-    public async ValueTask<string> ExtractAdvanced(string fileNamePath, string? specificFileFilter = null, bool isConcurrent = true,
+    public async ValueTask<string> ExtractAdvanced(string fileNamePath, string? specificFileFilter = null, bool isParallel = false,
         CancellationToken cancellationToken = default)
     {
         string tempDir = await _directoryUtil.CreateTempDirectory(cancellationToken)
                                              .NoSync();
         _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", fileNamePath, tempDir);
+
+        try
+        {
 
         // Full, normalized root used for traversal protection
         string rootFullPath = EnsureTrailingSeparator(Path.GetFullPath(tempDir));
@@ -50,12 +54,13 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         };
 
         await using var stream = new FileStream(fileNamePath, fsOptions);
-        IAsyncArchive archive = await SevenZipArchive.OpenAsyncArchive(stream, cancellationToken: cancellationToken)
-                                                     .NoSync();
+        await using IAsyncArchive archive = await SevenZipArchive.OpenAsyncArchive(stream, cancellationToken: cancellationToken)
+                                                          .NoSync();
 
         // Materialize matching entries once; SevenZipArchiveEntry is a reference type
         // and we need a stable snapshot before extracting.
         List<IArchiveEntry> entries = new(capacity: 32);
+        var destinationPaths = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
         await foreach (IArchiveEntry archiveEntry in archive.EntriesAsync.WithCancellation(cancellationToken))
         {
@@ -67,8 +72,15 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
             if (key.IsNullOrEmpty())
                 continue;
 
+            if (!archiveEntry.LinkTarget.IsNullOrEmpty())
+                throw new InvalidDataException($"Archive entry is a symbolic link and cannot be extracted safely: {key}");
+
             if (specificFileFilter != null && !key.EndsWith(specificFileFilter, StringComparison.OrdinalIgnoreCase))
                 continue;
+
+            string destinationPath = GetSafeDestinationPath(rootFullPath, key);
+            if (!destinationPaths.Add(destinationPath))
+                throw new InvalidDataException($"Multiple archive entries resolve to the same destination: {key}");
 
             entries.Add(archiveEntry);
         }
@@ -79,7 +91,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
             return tempDir;
         }
 
-        if (isConcurrent)
+        if (isParallel)
         {
             // Bounded concurrency prevents threadpool thrash on large archives.
             int dop = Math.Clamp(Environment.ProcessorCount, 1, 8);
@@ -105,6 +117,20 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
         _logger.LogInformation("Finished extracting {fileName} to directory ({dir})", fileNamePath, tempDir);
         return tempDir;
+        }
+        catch
+        {
+            try
+            {
+                await _directoryUtil.DeleteIfExists(tempDir, CancellationToken.None).NoSync();
+            }
+            catch (Exception cleanupException)
+            {
+                _logger.LogWarning(cleanupException, "Could not remove incomplete extraction directory {dir}", tempDir);
+            }
+
+            throw;
+        }
     }
 
     private Task ProcessEntryBounded(IArchiveEntry entry, string rootFullPath, SemaphoreSlim gate, CancellationToken cancellationToken)
@@ -129,37 +155,24 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
     private async ValueTask ProcessEntryInline(IArchiveEntry entry, string rootFullPath, CancellationToken cancellationToken)
     {
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
+        cancellationToken.ThrowIfCancellationRequested();
 
-            string key = entry.Key!;
+        string key = entry.Key!;
 
-            // Compute safe destination path (blocks traversal)
-            string destinationPath = GetSafeDestinationPath(rootFullPath, key);
+        // Compute safe destination path (blocks traversal)
+        string destinationPath = GetSafeDestinationPath(rootFullPath, key);
 
-            // Ensure containing directory exists (cheap if already exists)
-            string? dir = Path.GetDirectoryName(destinationPath);
+        // Ensure containing directory exists (cheap if already exists)
+        string dir = Path.GetDirectoryName(destinationPath)!;
 
-            await _directoryUtil.Create(dir, true, cancellationToken)
-                                .NoSync();
+        await _directoryUtil.Create(dir, true, cancellationToken)
+                            .NoSync();
 
-            // Per-entry info logs can be *very* noisy/slow on big archives.
-            _logger.LogDebug("Extracting {entry} ({size})...", key, entry.Size);
+        // Per-entry info logs can be *very* noisy/slow on big archives.
+        _logger.LogDebug("Extracting {entry} ({size})...", key, entry.Size);
 
-            // Sync write (SharpCompress). Overwrite semantics depend on SharpCompress version;
-            // keep default behavior to avoid unexpected changes.
-            await entry.WriteToFileAsync(destinationPath, null, cancellationToken)
-                       .NoSync();
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception extracting entry: {entry}", entry.Key);
-        }
+        await entry.WriteToFileAsync(destinationPath, null, cancellationToken)
+                   .NoSync();
     }
 
     private static string GetSevenZipExecutable()
@@ -181,18 +194,33 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
                                              .NoSync();
         _logger.LogInformation("Extracting file ({file}) to temp dir ({dir})...", archivePath, tempDir);
 
-        // Only one string allocation here; fine.
-        var args = $"x \"{archivePath}\" -o\"{tempDir}\" -y";
+        try
+        {
+            string args = $"x {QuoteProcessArgument(archivePath)} {QuoteProcessArgument($"-o{tempDir}")} -y -bso0 -bsp0";
 
-        _logger.LogInformation("Running 7-Zip extraction: {exe} {args}", executable, args);
+            _logger.LogInformation("Running bundled 7-Zip extraction with {exe}", executable);
 
-        string executablePath = Path.Combine(AppContext.BaseDirectory, "Resources", executable);
+            string executablePath = Path.Combine(AppContext.BaseDirectory, "Resources", executable);
 
-        _ = await _processUtil.Start(executablePath, null, args, cancellationToken: cancellationToken)
-                              .NoSync();
+            _ = await _processUtil.Start(executablePath, null, args, cancellationToken: cancellationToken)
+                                  .NoSync();
 
-        _logger.LogInformation("7-Zip extraction complete");
-        return tempDir;
+            _logger.LogInformation("7-Zip extraction complete");
+            return tempDir;
+        }
+        catch
+        {
+            try
+            {
+                await _directoryUtil.DeleteIfExists(tempDir, CancellationToken.None).NoSync();
+            }
+            catch (Exception cleanupException)
+            {
+                _logger.LogWarning(cleanupException, "Could not remove incomplete extraction directory {dir}", tempDir);
+            }
+
+            throw;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -218,9 +246,43 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         string full = Path.GetFullPath(combined);
 
         // Root already has trailing separator; this becomes a cheap prefix test.
-        if (!full.StartsWith(rootFullPath, StringComparison.OrdinalIgnoreCase))
+        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (!full.StartsWith(rootFullPath, comparison))
             throw new InvalidOperationException($"Archive entry path escapes destination directory: {entryKey}");
 
         return full;
+    }
+
+    private static string QuoteProcessArgument(string argument)
+    {
+        var builder = new StringBuilder(argument.Length + 2);
+        builder.Append('"');
+
+        var backslashCount = 0;
+        foreach (char character in argument)
+        {
+            if (character == '\\')
+            {
+                backslashCount++;
+                continue;
+            }
+
+            if (character == '"')
+            {
+                builder.Append('\\', (backslashCount * 2) + 1);
+                builder.Append('"');
+            }
+            else
+            {
+                builder.Append('\\', backslashCount);
+                builder.Append(character);
+            }
+
+            backslashCount = 0;
+        }
+
+        builder.Append('\\', backslashCount * 2);
+        builder.Append('"');
+        return builder.ToString();
     }
 }

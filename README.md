@@ -5,40 +5,79 @@
 
 # Soenneker.Compression.SevenZip
 
-A utility library for 7zip compression related operations.
+Extracts 7-Zip archives into temporary directories using either SharpCompress or a bundled native 7-Zip executable.
 
-## Install
+## Installation
 
 ```bash
 dotnet add package Soenneker.Compression.SevenZip
 ```
 
-## Quick start
+## Registration
 
 ```csharp
-using Soenneker.Compression.SevenZip.Registrars;
 using Microsoft.Extensions.DependencyInjection;
+using Soenneker.Compression.SevenZip.Registrars;
 
-var services = new ServiceCollection();
-var result = services.AddSevenZipCompressionUtilAsSingleton();
+services.AddSevenZipCompressionUtilAsSingleton();
 ```
 
-Adds `ISevenZipCompressionUtil` as a singleton service.
+`AddSevenZipCompressionUtilAsScoped()` is also available.
 
-## What you get
+## Managed extraction
 
-- `ISevenZipCompressionUtil` — A utility library for 7zip compression related operations.
-- `SevenZipCompressionUtilRegistrar` — A utility library for 7zip compression related operations.
+`ExtractAdvanced` uses SharpCompress and supports suffix filtering:
 
-## API at a glance
+```csharp
+using Soenneker.Compression.SevenZip.Abstract;
 
-| API | What it does | Result / important behavior |
-| --- | --- | --- |
-| `ISevenZipCompressionUtil.ExtractAdvanced(fileNamePath, specificFileFilter, isParallel, cancellationToken)` | Extracts advanced. | A task whose result is the text returned by extract Advanced. |
-| `ISevenZipCompressionUtil.Extract(archivePath, cancellationToken)` | Extracts seven Zip Compression. | A task whose result is the text returned by extract. |
-| `SevenZipCompressionUtilRegistrar.AddSevenZipCompressionUtilAsSingleton(services)` | Adds `ISevenZipCompressionUtil` as a singleton service. | The same service collection, so additional registrations can be chained. |
-| `SevenZipCompressionUtilRegistrar.AddSevenZipCompressionUtilAsScoped(services)` | Adds `ISevenZipCompressionUtil` as a scoped service. | The same service collection, so additional registrations can be chained. |
+string outputDirectory = await sevenZip.ExtractAdvanced(
+    archivePath,
+    specificFileFilter: ".json",
+    cancellationToken: cancellationToken);
 
-## Practical notes
+try
+{
+    foreach (string file in Directory.EnumerateFiles(
+                 outputDirectory,
+                 "*",
+                 SearchOption.AllDirectories))
+    {
+        // Process each extracted JSON file.
+    }
+}
+finally
+{
+    Directory.Delete(outputDirectory, recursive: true);
+}
+```
 
-- Cancellation stops pending work; it does not undo work that has already completed.
+The filter is a case-insensitive `EndsWith` match, not a glob or regular expression. Directories are skipped. When nothing matches, the method returns an empty temporary directory.
+
+Managed extraction is sequential by default. Set `isParallel: true` only for a trusted, tested workload where concurrent entry extraction is beneficial.
+
+## Native extraction
+
+`Extract` runs the packaged native 7-Zip executable and extracts the complete archive:
+
+```csharp
+string outputDirectory = await sevenZip.Extract(
+    archivePath,
+    cancellationToken);
+```
+
+The native path is available on Windows and Linux. It throws `PlatformNotSupportedException` on other operating systems. A non-zero 7-Zip exit code is surfaced as an exception.
+
+## Output ownership and failure behavior
+
+- Both methods create and return a new temporary directory. The caller owns that directory and must delete it after consuming the files.
+- On cancellation or extraction failure, the utility attempts to remove the incomplete directory before rethrowing the original error.
+- The source archive is opened read-only and is not deleted or modified.
+- Managed extraction rejects absolute/traversing paths, symbolic-link entries, and multiple entries that resolve to the same destination.
+- Managed entry failures are propagated; the method does not report a partially extracted directory as success.
+
+## Handling untrusted archives
+
+Path validation does not make arbitrary archives resource-safe. Neither extraction method imposes limits on expanded byte count, compression ratio, entry count, nesting, or execution time beyond caller cancellation. Validate archive size and provenance, enforce application-level quotas and timeouts, and use an isolated process or container when accepting untrusted uploads.
+
+Do not process extracted files as executable content merely because extraction succeeded.
