@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Soenneker.Extensions.String;
 using System.Text;
+using Soenneker.Utils.PooledStringBuilders;
 
 namespace Soenneker.Compression.SevenZip;
 
@@ -255,7 +256,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
     private static string QuoteProcessArgument(string argument)
     {
-        var builder = new StringBuilder(argument.Length + 2);
+        using var builder = new PooledStringBuilder(argument.Length + 2);
         builder.Append('"');
 
         var backslashCount = 0;
