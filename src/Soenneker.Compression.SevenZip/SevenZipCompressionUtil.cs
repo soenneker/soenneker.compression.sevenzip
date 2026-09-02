@@ -6,6 +6,7 @@ using Soenneker.Extensions.Task;
 using Soenneker.Extensions.ValueTask;
 using Soenneker.Utils.Directory.Abstract;
 using Soenneker.Utils.Process.Abstract;
+using Soenneker.Utils.Paths.Resources.Abstract;
 using Soenneker.Utils.Runtime;
 using System;
 using System.Collections.Generic;
@@ -25,12 +26,20 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
     private readonly ILogger<SevenZipCompressionUtil> _logger;
     private readonly IDirectoryUtil _directoryUtil;
     private readonly IProcessUtil _processUtil;
+    private readonly IResourcesPathUtil _resourcesPathUtil;
 
     public SevenZipCompressionUtil(ILogger<SevenZipCompressionUtil> logger, IDirectoryUtil directoryUtil, IProcessUtil processUtil)
+        : this(logger, directoryUtil, processUtil, new Soenneker.Utils.Paths.Resources.ResourcesPathUtil(directoryUtil))
+    {
+    }
+
+    public SevenZipCompressionUtil(ILogger<SevenZipCompressionUtil> logger, IDirectoryUtil directoryUtil, IProcessUtil processUtil,
+        IResourcesPathUtil resourcesPathUtil)
     {
         _logger = logger;
         _directoryUtil = directoryUtil;
         _processUtil = processUtil;
+        _resourcesPathUtil = resourcesPathUtil;
     }
 
     public async ValueTask<string> ExtractAdvanced(string fileNamePath, string? specificFileFilter = null, bool isParallel = false,
@@ -201,7 +210,8 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
 
             _logger.LogInformation("Running bundled 7-Zip extraction with {exe}", executable);
 
-            string executablePath = Path.Combine(AppContext.BaseDirectory, "Resources", executable);
+            string executablePath = await _resourcesPathUtil.GetResourceFilePath(executable, cancellationToken)
+                                                                .NoSync();
 
             _ = await _processUtil.Start(executablePath, null, args, cancellationToken: cancellationToken)
                                   .NoSync();

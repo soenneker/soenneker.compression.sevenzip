@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Soenneker.Compression.SevenZip.Abstract;
 using Soenneker.Utils.Directory.Registrars;
 using Soenneker.Utils.Process.Registrars;
+using Soenneker.Utils.Paths.Resources.Registrars;
 
 namespace Soenneker.Compression.SevenZip.Registrars;
 
@@ -18,7 +19,10 @@ public static class SevenZipCompressionUtilRegistrar
     /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddSevenZipCompressionUtilAsSingleton(this IServiceCollection services)
     {
-        services.AddDirectoryUtilAsSingleton().AddProcessUtilAsSingleton().TryAddSingleton<ISevenZipCompressionUtil, SevenZipCompressionUtil>();
+        services.AddDirectoryUtilAsSingleton()
+                .AddProcessUtilAsSingleton()
+                .AddResourcesPathUtilAsSingleton()
+                .TryAddSingleton<ISevenZipCompressionUtil, SevenZipCompressionUtil>();
 
         return services;
     }
@@ -30,7 +34,10 @@ public static class SevenZipCompressionUtilRegistrar
     /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddSevenZipCompressionUtilAsScoped(this IServiceCollection services)
     {
-        services.AddDirectoryUtilAsScoped().AddProcessUtilAsScoped().TryAddScoped<ISevenZipCompressionUtil, SevenZipCompressionUtil>();
+        services.AddDirectoryUtilAsScoped()
+                .AddProcessUtilAsScoped()
+                .AddResourcesPathUtilAsScoped()
+                .TryAddScoped<ISevenZipCompressionUtil, SevenZipCompressionUtil>();
 
         return services;
     }
