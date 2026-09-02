@@ -1,3 +1,4 @@
+using System.Threading;
 using Soenneker.Compression.SevenZip.Abstract;
 using Soenneker.Tests.Attributes.Local;
 using Soenneker.Tests.HostedUnit;
@@ -23,9 +24,9 @@ public class SevenZipCompressionUtilTests : HostedUnitTest
 
     [Test]
     [LocalOnly]
-    public async ValueTask Extract()
+    public async ValueTask Extract(CancellationToken cancellationToken)
     {
-        string result = await _util.Extract(@"C:\7zip\test.7z.exe", System.Threading.CancellationToken.None);
+        string result = await _util.Extract(@"C:\7zip\test.7z.exe", cancellationToken);
 
     }
 }
