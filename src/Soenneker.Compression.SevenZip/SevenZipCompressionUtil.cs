@@ -4,6 +4,7 @@ using SharpCompress.Archives.SevenZip;
 using Soenneker.Compression.SevenZip.Abstract;
 using Soenneker.Extensions.Task;
 using Soenneker.Extensions.ValueTask;
+using Soenneker.Asyncs.Semaphores;
 using Soenneker.Utils.Directory.Abstract;
 using Soenneker.Utils.Process.Abstract;
 using Soenneker.Utils.Paths.Resources.Abstract;
@@ -105,7 +106,7 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         {
             // Bounded concurrency prevents threadpool thrash on large archives.
             int dop = Math.Clamp(Environment.ProcessorCount, 1, 8);
-            using var gate = new SemaphoreSlim(dop, dop);
+            var gate = new AsyncSemaphore(dop);
 
             var tasks = new Task[entries.Count];
 
@@ -143,23 +144,13 @@ public sealed class SevenZipCompressionUtil : ISevenZipCompressionUtil
         }
     }
 
-    private Task ProcessEntryBounded(IArchiveEntry entry, string rootFullPath, SemaphoreSlim gate, CancellationToken cancellationToken)
+    private Task ProcessEntryBounded(IArchiveEntry entry, string rootFullPath, AsyncSemaphore gate, CancellationToken cancellationToken)
     {
         // Minimal async state: wait bounded, then run extraction on threadpool (SharpCompress is sync).
         return Task.Run(async () =>
         {
-            await gate.WaitAsync(cancellationToken)
-                      .NoSync();
-
-            try
-            {
-                await ProcessEntryInline(entry, rootFullPath, cancellationToken)
-                    .NoSync();
-            }
-            finally
-            {
-                gate.Release();
-            }
+            using SemaphoreLease lease = await gate.Acquire(cancellationToken).NoSync();
+            await ProcessEntryInline(entry, rootFullPath, cancellationToken).NoSync();
         }, cancellationToken);
     }
 
