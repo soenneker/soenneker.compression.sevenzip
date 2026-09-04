@@ -17,10 +17,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.Tests.Attributes.Local" Version="4.0.93" />
+        <PackageReference Include="Soenneker.Tests.Attributes.Local" Version="4.0.94" />
         <PackageReference Include="Soenneker.Utils.Test" Version="4.0.327" />
-        <PackageReference Include="Soenneker.Tests.HostedUnit" Version="4.0.236" />
-        <PackageReference Include="TUnit" Version="1.65.68" />
+        <PackageReference Include="Soenneker.Tests.HostedUnit" Version="4.0.237" />
+        <PackageReference Include="TUnit" Version="1.66.0" />
     </ItemGroup>
 
     <ItemGroup>
