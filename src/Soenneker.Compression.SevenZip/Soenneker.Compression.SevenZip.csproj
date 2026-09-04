@@ -48,9 +48,7 @@
         <PackageReference Include="Soenneker.Asyncs.Semaphores" Version="4.0.5" />
         <PackageReference Include="Soenneker.Libraries.SevenZip" Version="4.0.433" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="4.0.424" PrivateAssets="analyzers;build" />
-        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.916" />
         <PackageReference Include="Soenneker.Utils.Process" Version="4.0.1542" />
         <PackageReference Include="Soenneker.Utils.Paths.Resources" Version="4.0.230" />
-        <PackageReference Include="Soenneker.Utils.PooledStringBuilders" Version="4.0.29" />
     </ItemGroup>
 </Project>
