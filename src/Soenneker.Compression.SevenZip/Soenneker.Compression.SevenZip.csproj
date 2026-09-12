@@ -45,7 +45,7 @@
 
     <ItemGroup>
         <PackageReference Include="SharpCompress" Version="0.50.4" />
-        <PackageReference Include="Soenneker.Asyncs.Semaphores" Version="4.0.6" />
+        <PackageReference Include="Soenneker.Asyncs.Semaphores" Version="4.0.7" />
         <PackageReference Include="Soenneker.Libraries.SevenZip" Version="4.0.504" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="4.0.495" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Utils.Process" Version="4.0.1553" />
