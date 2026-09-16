@@ -48,7 +48,7 @@
         <PackageReference Include="Soenneker.Asyncs.Semaphores" Version="4.0.13" />
         <PackageReference Include="Soenneker.Libraries.SevenZip" Version="4.0.504" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="4.0.495" PrivateAssets="analyzers;build" />
-        <PackageReference Include="Soenneker.Utils.Process" Version="4.0.1563" />
+        <PackageReference Include="Soenneker.Utils.Process" Version="4.0.1565" />
         <PackageReference Include="Soenneker.Utils.Paths.Resources" Version="4.0.261" />
     </ItemGroup>
 </Project>
