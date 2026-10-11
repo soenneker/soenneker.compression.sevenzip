@@ -50,7 +50,7 @@
         <PackageReference Include="Soenneker.Libraries.SevenZip" Version="4.0.536" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="4.0.527" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Utils.Process" Version="4.0.1576" />
-        <PackageReference Include="Soenneker.Utils.Paths.Resources" Version="4.0.275" />
+        <PackageReference Include="Soenneker.Utils.Paths.Resources" Version="4.0.276" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.124" />
