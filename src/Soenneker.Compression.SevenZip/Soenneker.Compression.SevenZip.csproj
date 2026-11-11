@@ -50,8 +50,8 @@
         <PackageReference Include="Soenneker.Asyncs.Semaphores" Version="11.0.38" />
         <PackageReference Include="Soenneker.Libraries.SevenZip" Version="11.0.575" PrivateAssets="analyzers;build" />
         <PackageReference Include="Soenneker.Libraries.SevenZip.Linux" Version="11.0.566" PrivateAssets="analyzers;build" />
-        <PackageReference Include="Soenneker.Utils.Process" Version="11.0.1613" />
-        <PackageReference Include="Soenneker.Utils.Paths.Resources" Version="11.0.315" />
+        <PackageReference Include="Soenneker.Utils.Process" Version="11.0.1614" />
+        <PackageReference Include="Soenneker.Utils.Paths.Resources" Version="11.0.316" />
     </ItemGroup>
     <ItemGroup>
     </ItemGroup>
